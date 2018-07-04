@@ -39,7 +39,6 @@ If we have multiple samples from each population, then counting *ABBA* and *BABA
 
 *ABBA* = (1-*p1*) x *p2* x *p3* x 1-*pO*
 *BABA* = *p1* x (1-*p2*) x *p3* x 1-*pO*
----
 
 ## The Practical Bit
 
