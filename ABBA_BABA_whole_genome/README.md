@@ -31,13 +31,14 @@ Ignoring recurrant mutation, the two SNP patterns can only be produced if some p
 
 To quantify the deviation from the expected ratio, we calculate *D*, which is the difference in the sum of *ABBA* and *BABA* patterns across the genome, divided by their sum:
 
-D = \[sum(ABBA) - sub(BABA)\] / \[sum(ABBA) + sub(BABA)\]
+D = \[sum(ABBA) - sum(BABA)\] / \[sum(ABBA) + sum(BABA)\]
 
 **Therefore, D ranges from -1 to 1, and should equal 0 under the null hypothesis. D > 1 indicates and excess of *ABBA*, and D < 1 indicates an excess of *BABA*.**
 
 If we have multiple samples from each population, then counting *ABBA* and *BABA* sites is less straghtforward. One option is to consider only sites at which all samples from the same population share the same allele, but that will discard a large amount of useful data. A preferable option is to use the allele frequencies at each site to quantify the extent to which the genealogy is skewed toward the *ABBA* or *BABA* pattern. This is effectively equivalent to counting *ABBA* and *BABA* SNPs using all possible sets of four haploid genomes at each site. *ABBA* and *BABA* are therefore no longer binary states, but rather numbers between 0 and 1 that represent the frequency of allele combinations matching each genealogy. They are computed based on the frequency of the derived allele (*p*) and ancestral allele (1-*p*) in each population as follows:
 
 *ABBA* = (1-*p1*) x *p2* x *p3* x 1-*pO*
+
 *BABA* = *p1* x (1-*p2*) x *p3* x 1-*pO*
 
 ## The Practical Bit
@@ -57,7 +58,7 @@ git clone https://github.com/simonhmartin/genomics_general
 To compute these values from population genomic data, we need to first determine the frequency of the derived allele in each populaton at each polymorphic site in the genome. We will compute these from the *Heliconius* genotype data provided using a python script. The input file has already been filtered to contain only bi-allelic sites. The frequencies script requires that we define populations. These are defined in the file `hel92.pop.txt`.
 
 ```bash
-python genomics_general/freq.py -g data/hel92.DP8MP4BIMAC2HET75dist1K.geno.gz -p mpg -p ros -p vul -p mal -p ama -p chi -p zel -p flo -p txn -p slv --popsFile data/hel92.pop.txt --target derived -o data/hel92.DP8MP4BIMAC2HET75dist1K.derFreq.tsv.gz
+python genomics_general/freq.py -g data/hel92.DP8MP4BIMAC2HET75dist1K.geno.gz -p mel_mel -p mel_ros -p mel_vul -p mel_mal -p mel_ama -p cyd_chi -p cyd_zel -p tim_flo -p tim_txn -p num --popsFile data/hel92.pop.txt --target derived -o data/hel92.DP8MP4BIMAC2HET75dist1K.derFreq.tsv.gz
 ```
 By setting `--target derived` we obtain the frquency of the derived allele in each population at each site. This is based on using the final population specified (*H. numata silvana*, or '*slv*') as the outgroup. Sites at which this population is not fixed for the ancestral state are discarded.
 
@@ -110,7 +111,7 @@ Note that the first two columns give the name of the scaffold (i.e. the chromoso
 #### The *D* statistic
 
 Now, to compute D, we need to define populations P1, P2 and P3. We will start with an obvious and **previously published test case**:
-We will ask whether there is evidence of introgression between ***H. melpomene rosina* (*ros*)** and ***H. cydno chioneus* (*chi*)**. These will be **P2** and **P3** respectively. **P1** will be our **allopatirc** population ***H. melpomene melpomene* from French Guiana (*mpg*)**.
+We will ask whether there is evidence of introgression between ***H. melpomene rosina* (`mel_ros`)** and ***H. cydno chioneus* (`cyd_chi`)**. These will be **P2** and **P3** respectively. **P1** will be our **allopatirc** population, ***H. melpomene melpomene* from French Guiana (`mel_mel`)**.
 
 We set these populations and then compute *D* by extracting the the derived allele frequencies for all SNPs for the three populations.
 
@@ -159,7 +160,6 @@ The first step in the process is to define the blocks that will be omitted from 
 
 ```R
 blocks = get_genome_blocks(block_size=1e6, chrom_lengths=chrom_lengths)
-n_blocks = nrow(blocks)
 ```
 This gives a table with a row for each block, giving its start and end position and the chromosome it is on.
 
@@ -176,10 +176,11 @@ indices <- get_genome_jackknife_indices(chromosome=freq_table$scaffold,
                                         block_info=blocks)
 ```
 
-Now we can run the block jackknifing procedure. We provide the the D statistic function we created earlier, which it will use each iteration. We also provide the input ABBA BABA dataframe, and the block indices.
+Now we can run the block jackknifing procedure. We provide the D statistic function we created earlier, which it will use each iteration. We also provide the ABBA and BABA values for each site and the block indices that it will use to subsample the sites.
 
 ```R
 D_sd <- get_jackknife_sd(jackknife_indices=indices, FUN=D.stat, ABBA,BABA)
+D_sd
 ```
 
 
@@ -220,6 +221,8 @@ Finally, we can estimate *f* as the observed difference between ABBA and BABA to
 ```R
 f <- (sum(ABBA_1_2_3a) - sum(BABA_1_2_3a)) /
      (sum(ABBA_1_3b_3a) - sum(BABA_1_3b_3a))
+
+f
 ```
 
 This reveals that nearly 30% of the genome has been shared between *H. melpomene* and *H. cydno* in sympatry. The admixture proportion can be interpreted as the average proportion of foreign ancestry in any given haploid genome. It can also be interpreted as the expected frequency of foreign alleles at any given site in the genome in a population.
