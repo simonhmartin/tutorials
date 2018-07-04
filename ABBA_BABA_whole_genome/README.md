@@ -1,5 +1,4 @@
-# Tutorial: *ABBA* *BABA* statistics
-### Simon Martin (shm45@cam.ac.uk)
+# Tutorial: *ABBA* *BABA* statistics using genome wide SNP data
 
 ___
 ## Requirements
