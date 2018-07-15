@@ -81,8 +81,8 @@ First we define a function for computing the ABBA and BABA proportions at each s
 
 ```R
 D.stat <- function(p1, p2, p3) {
-    ABBA = (1 - p1) * p2 * p3
-    BABA = p1 * (1 - p2) * p3
+    ABBA <- (1 - p1) * p2 * p3
+    BABA <- p1 * (1 - p2) * p3
     (sum(ABBA) - sum(BABA)) / (sum(ABBA) + sum(BABA))
     }
 ```
@@ -119,7 +119,7 @@ P1 <- "mel_mel"
 P2 <- "mel_ros"
 P3 <- "cyd_chi"
 
-D = D.stat(freq_table[,P1], freq_table[,P2], freq_table[,P3])
+D <- D.stat(freq_table[,P1], freq_table[,P2], freq_table[,P3])
 
 D
 ```
@@ -221,8 +221,8 @@ The 95% confidence interval is the mean +/- ~1.96 standard errors.
 ```R
 f_err <- f_sd/sqrt(n_blocks)
 
-f_CI_lower = f - 1.96*f_err
-f_CI_upper = f + 1.96*f_err
+f_CI_lower <- f - 1.96*f_err
+f_CI_upper <- f + 1.96*f_err
 
 print(paste("95% confidence interval of f:", round(f_CI_lower,4), round(f_CI_upper,4)))
 
@@ -230,7 +230,7 @@ print(paste("95% confidence interval of f:", round(f_CI_lower,4), round(f_CI_upp
 
 ### Chromosomal ABBA BABA analysis
 
-####Do all chromosomes show evidence of introgression?
+#### Do all chromosomes show evidence of introgression?
 
 Above, we investigated the extent of introgression across the whole genome. We can perform a similar analysis at the chromosomal level to assess introgression on individual chromosomes, assuming we have a sufficient number of SNPs from each chromosome.
 
@@ -265,9 +265,9 @@ D_by_chrom <- sapply(chrom_names,
 We also need to apply the jackknife to to determine whether *D* differs significantly from zero for each chromosome. First we will define the blocks to use for each chromosome.
 	
 ```R
-block_indices_by_chrom = lapply(chrom_names,
-                                function(chrom) get_block_indices(block_size=1e6,
-                                                                  positions=freq_table$position[freq_table$scaffold==chrom]))
+block_indices_by_chrom <- lapply(chrom_names,
+                                 function(chrom) get_block_indices(block_size=1e6,
+                                                                   positions=freq_table$position[freq_table$scaffold==chrom]))
 
 names(block_indices_by_chrom) <- chrom_names
 ```
