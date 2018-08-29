@@ -82,14 +82,14 @@ git clone https://github.com/simonhmartin/genomics_general
 
 ```bash
 python genomics_general/ABBABABAwindows.py \
--g data/mel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
--o data/mel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz \
+-g data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
+-o data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz \
 -P1 mel_mel -P2 mel_ros -P3 cyd_chi -O num \
 --popsFile data/hel92.pop.txt -w 25000 -m 250 --T 2
 
 python genomics_general/ABBABABAwindows.py \
--g data/mel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
--o data/mel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz \
+-g data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
+-o data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz \
 -P1 mel_mel -P2 mel_ama -P3 tim_txn -O num \
 --popsFile data/hel92.pop.txt -w 25000 -m 250 --T 2
 ```
@@ -111,8 +111,8 @@ We need to load each file of window statistics into R. We will make a list conta
 * First input the names of teh input files
 
 ```R
-file_names <- c("data/mel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz",
-                "data/mel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz")
+file_names <- c("data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz",
+                "data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz")
 
 stats_tables = lapply(file_names, read.csv)
 ```
