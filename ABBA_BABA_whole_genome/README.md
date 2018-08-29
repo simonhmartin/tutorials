@@ -16,10 +16,15 @@ In this practical we will perform an ABBA BABA analysis using a **combination of
 #### Workflow
 Starting with genotype data from multiple individuals, we first **infer allele frequencies** at each SNP. We then **compute the *D* statistic** and then use a **block jackknife** method to test for a significant deviation from the null expectation of *D*=0. Finally we **estimate *f* the 'admixture proportion'**.
 
-#### The hypotheses
-We will study multiple races from three species: *Heliconius melpomene*, *Heliconius timareta* and *Heliconius cydno*. These species have partially overlapping ranges and they are thought to hybridise where they occur in sympatry. Our sample set includes two pairs of sympatric races of *H. melpomene* and *H. cydno* from Panama and the western slopes of the Andes in Colombia. There are also two pairs of sympatric races of *H. melpomene* and H. timareta from the eastern slopes of the Andes in Colombia and Peru.
+#### Data
 
-We hypothesize that hybridisation between species in sympatry will lead to sharing of genetic variation between *H. cydno* and the **sympatric** races of *H. melpomene* from the west, and between *H. timareta* and the corresponding sympatric races of *H. melpomene* from the east of the Andes. There is also another race of *H. melpomene* from French Guiana that is **allopatric** from both *H. timareta* and *H. cydno*, which should have not experienced recent genetic exchange with either species and therefore serves as a control. Finally, there are two samples from an outgroup species *Heliconius numata*, which are necessary for performing the ABBA BABA analyses.
+We will study multiple races from three species: *Heliconius melpomene*, *Heliconius timareta* and *Heliconius cydno*. These species have partially overlapping ranges and they are thought to hybridise where they occur in sympatry. Our sample set includes two pairs of sympatric races of *H. melpomene* and *H. cydno* from Panama and the western slopes of the Andes in Colombia. There are also two pairs of sympatric races of *H. melpomene* and H. timareta from the eastern slopes of the Andes in Colombia and Peru. Finally, there are two samples from an outgroup species *Heliconius numata*, which are necessary for performing the ABBA BABA analyses.
+
+All samples were sequenced using high-depth **whole-genome sequencing**, and genotypes have been called for each individual for each site in the genome using a standard pipeline. The data has been filtered to retain only **bi-allelic** single nucleotide polymorphisms (SNPs), and these have been further **thinned** to reduce the file size for this tutorial.
+
+#### Hypotheses
+
+We hypothesize that hybridisation between species in sympatry will lead to sharing of genetic variation between *H. cydno* and the **sympatric** races of *H. melpomene* from the west, and between *H. timareta* and the corresponding sympatric races of *H. melpomene* from the east of the Andes. There is also another race of *H. melpomene* from French Guiana that is **allopatric** from both *H. timareta* and *H. cydno*, which should have not experienced recent genetic exchange with either species and therefore serves as a control.
 
 In addition to testing for the presnece of introgression, we will test the hypothesis that some parts of teh genome experience more introgression than others. Specifically, we know that at least one locus on the Z sex chromosome causes sterility in hybrid females between these species, indicating an incompatibility between the autosomes of one species and the Z chromosome of the other. We therefore might expect reduced introgression on the Z chromosome compared to autosomes.
 
@@ -36,7 +41,7 @@ To quantify the deviation from the expected ratio, we calculate *D*, which is th
 
 *D* = \[sum(*ABBA*) - sum(*BABA*)\] / \[sum(*ABBA*) + sum(*BABA*)\]
 
-**Therefore, D ranges from -1 to 1, and should equal 0 under the null hypothesis. D > 1 indicates and excess of *ABBA*, and D < 1 indicates an excess of *BABA*.**
+**Therefore, D ranges from -1 to 1, and should equal 0 under the null hypothesis. D > 1 indicates an excess of *ABBA*, and D < 1 indicates an excess of *BABA*.**
 
 If we have multiple samples from each population, then counting *ABBA* and *BABA* sites is less straghtforward. One option is to consider only sites at which all samples from the same population share the same allele, but that will discard a large amount of useful data. A preferable option is to use the allele frequencies at each site to quantify the extent to which the genealogy is skewed toward the *ABBA* or *BABA* pattern. This is effectively equivalent to counting *ABBA* and *BABA* SNPs using all possible sets of four haploid genomes at each site. *ABBA* and *BABA* are therefore no longer binary states, but rather numbers between 0 and 1 that represent the frequency of allele combinations matching each genealogy. They are computed based on the frequency of the derived allele (*p*) and ancestral allele (1-*p*) in each population as follows:
 
@@ -44,7 +49,7 @@ If we have multiple samples from each population, then counting *ABBA* and *BABA
 
 *BABA* = *p1* x (1-*p2*) x *p3* x 1-*pO*
 
-## The Practical Bit
+## The Practical
 
 ### Preparation
 
@@ -300,7 +305,7 @@ D_Z_by_chrom <- D_by_chrom / D_err_by_chrom
 D_Z_by_chrom
 ```
 
-We see that chromosomes 1-20 all show significant evidene for introgression (Z > 4), while chromosome 21, the Z sex chromoeosme, does not. In fact *D* is negative for chr21, indicating that the allopatric *H. melpomene population* shares more variation with *H. cydno* than the sympatric *H. melpomene* shares with *H. cydno*, although the difference is not significant. This indicates a strong reduction in introgression on th esex chromosome compared to the rest of the genome, consistent with strong selection against introgressed alleles on the sex chromosome. This is what we would expect if there are one or more incompatibilities that cause sterility that involve loci on the Z chromsoome.
+We see that chromosomes 1-20 all show significant evidene for introgression (Z > 4), while chromosome 21, the Z sex chromoeosme, does not. In fact *D* is negative for chr21, indicating that the allopatric *H. melpomene population* shares more variation with *H. cydno* than the sympatric *H. melpomene* shares with *H. cydno*, although the difference is not significant. This indicates a strong reduction in introgression on the sex chromosome compared to the rest of the genome, consistent with strong selection against introgressed alleles on the sex chromosome. This is what we would expect if there are one or more incompatibilities that cause sterility that involve loci on the Z chromsoome.
 
 
 ### In your own time
@@ -309,5 +314,4 @@ We have run the analysis for a single set of three populations, but to fully und
 
 For example,instead of using the allopatric *H. melpomene melpomene* as P1, we can use *H. melpomene vulcanus* from Colombia (`mel_vul`), which is physically closer and more closely related to *H. melpomene rosina*. Do we still see a significant *D* value and large admixture proportion? If not, why?
 
-Another obvious test is whether there is also introgression between *H. timareta* and the local *H. melpomene* populations from the other side of the Andes.
-
+Another obvious test is whether there is also introgression between *H. timareta* and the local *H. melpomene* populations from the other side of the Andes. What would be appropriate P1, P2 and P3 for that test?
