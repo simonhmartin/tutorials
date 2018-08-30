@@ -1,9 +1,9 @@
 # Tutorial: *ABBA* *BABA* analysis in sliding windows
 ___
 ## Requirements
-Python 2.7
-Numpy 1.10+
-R 3.0+
+* Python 2.7
+* Numpy 1.10+
+* R 3.0+
 
 ___
 ## Introduction
