@@ -111,10 +111,10 @@ We need to load each file of window statistics into R. We will make a list conta
 * First input the names of teh input files
 
 ```R
-file_names <- c("data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz",
-                "data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz")
+AB_files <- c("data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz",
+                "data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz")
 
-stats_tables = lapply(file_names, read.csv)
+AB_tables = lapply(AB_files, read.csv)
 ```
 
 *f<sub>d<sub>* is meaningless when D is negative, as it is designed to quantify the excess of ABBA over BABA only whgen an excess exists.
@@ -122,25 +122,81 @@ stats_tables = lapply(file_names, read.csv)
 * We therefore convert all *f<sub>d</sub>* values to 0 at sites where *D* is negative. 
 
 ```R
-for (x in 1:length(stats_tables)){
-stats_tables[[x]]$fd = ifelse(stats_tables[[x]]$D < 0, 0, stats_tables[[x]]$fd)
+for (x in 1:length(AB_tables)){
+AB_tables[[x]]$fd = ifelse(AB_tables[[x]]$D < 0, 0, AB_tables[[x]]$fd)
     }
 ```
 
 * We can then plot of *f<sub>d</sub>* across the chromosome for the two cases we have analysed.
 
 ```R
-par(mfrow=c(length(stats_tables), 1), mar = c(4,4,1,1))
+par(mfrow=c(length(AB_tables), 1), mar = c(4,4,1,1))
 
-for (x in 1:length(stats_tables)){
-    plot(stats_tables[[x]]$mid, stats_tables[[x]]$fd,
+for (x in 1:length(AB_tables)){
+    plot(AB_tables[[x]]$mid, AB_tables[[x]]$fd,
     type = "l", xlim=c(0,17e6),ylim=c(0,1),ylab="Admixture Proportion",xlab="Position")
     rect(1000000,0,1250000,1, col = rgb(0,0,0,0.2), border=NA)
     }
 ```
 
-This reveals that there is considerable heterogeneity in the extent of admixture across the chromosome. If we consider the region around optix, we see evidence for reduced introgression between *H. melpomene rosina* and *H. cydno chioneus*, as we predicted. By contrast, we see evidence for elevated introgression between *H. melpomene amaryllis* and *H. timareta thelxinoe*, which suggests that their shared wing patterns might result from adaptive introgression. Given this evidence, it would be recommended to make a phylogeny for the region around optix to test whether the H. timareta allele appears to be 'nested' within the H. melpomene clade. In this case, previous papers have confirmed that that is the case ([Pardo-Diaz et al. 2012](https://doi.org/10.1371/journal.pgen.1002752), [Wallbank et al. 2016](https://doi.org/10.1371/journal.pbio.1002353)).
+This reveals that there is considerable heterogeneity in the extent of introgression across the chromosome. If we consider the region around optix, we see evidence for reduced introgression between *H. melpomene rosina* and *H. cydno chioneus*, as we predicted. By contrast, we see evidence for elevated introgression between *H. melpomene amaryllis* and *H. timareta thelxinoe*, which suggests that their shared wing patterns might result from adaptive introgression. Given this evidence, it would be recommended to make a phylogeny for the region around optix to test whether the H. timareta allele appears to be 'nested' within the H. melpomene clade. In this case, previous papers have confirmed that that is the case ([Pardo-Diaz et al. 2012](https://doi.org/10.1371/journal.pgen.1002752), [Wallbank et al. 2016](https://doi.org/10.1371/journal.pbio.1002353)).
+
 
 #### In your own time
-What happens when we change the identity of P1, P2 an P3? What happend if we change the window size?
+What happens when we change the identity of P1, P2 an P3? What happens if we change the window size?
+
+
+### Association between introgression and recombination rate
+
+Theory predicts that if there are many "barrier loci", at which introgression is selected against, we should see a global trend of reduced introgression in low recombination regions, due to strongler linkage between neutral introgressed alleles and deleterious ones.
+
+We can test this hypothesis by examining the relationship between recombination rate and *f<sub>d</sub>* across our chromosome.
+
+We have a previously-generated data file (provided) giving the estimated population recombination rate in 100 kb windows across this chromosome.
+
+* Open a terminal window and navidate to the tutorial folder.
+
+* Now we will make a matching dataset with *f<sub>d</sub>* for 100 kb windows, here just using the species pair showing the highest rate of introgression: *H. melpomene rosina* and *H. cydno chioneus* from Panama.
+
+```bash
+python ~/Research/genomics_general/ABBABABAwindows.py \
+-g data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
+-o data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w100m1.csv.gz \
+-P1 mel_mel -P2 mel_ros -P3 cyd_chi -O num \
+--popsFile data/hel92.pop.txt -w 100000 -m 1000 --T 2
+```
+
+* Now, **back in R**, read in this new data file.
+
+```R
+AB_table_w100 <- read.csv("data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w100m1.csv.gz")
+```
+
+* As before, we convert any *f<sub>d</sub>* values for windows with negative *D* to 0.
+
+```R
+AB_table_w100$fd = ifelse(AB_table_w100$D < 0, 0, AB_table_w100$fd)
+```
+
+Now we read in the table of recombination rates for 100 kb windows. Here the column `ML_rho` gives tha maximum likelihood estimate of the population recombination rate for each window.
+
+```R
+rec_table <- read.table("data/chr18.LDhelmet_MLrho.w100.tsv", header=T)
+head(rec_table)
+```
+
+* Due to the noisy nature of the data, we want to compare fd values in bins of different recombination rate. We will use the `cut` function to separate the windows into three bins with low, medium and high recombination rates.
+
+```R
+rec_bin <- cut(rec_table$ML_rho, 3)
+```
+
+* Finally, we can make boxplots to compare the inferred level of admixture (*f<sub>d</sub>*) between these bins.
+
+```R
+boxplot(AB_table_w100$fd ~ rec_bin)
+```
+
+This confirms that indeed the level of introgression increases with increasing recombination rate, consistent with a model in which a large number of barrier loci select against introgression geneome-wide.
+
 
