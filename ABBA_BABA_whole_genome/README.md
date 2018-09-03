@@ -53,12 +53,27 @@ If we have multiple samples from each population, then counting *ABBA* and *BABA
 
 ### Preparation
 
-Open a terminal window and navigate to a folder where you will run the excersise and store all the input and output data files.
+* Open a terminal window and navigate to a folder where you will run the excersise and store all the input and output data files.
 
-This tutorial makes use of a collection of python scripts that must be downloaded from [GitHub](https://github.com/simonhmartin)
+* Now create a subdirectory called 'data' and download the data files needed for tis tutorial
 
 ```bash
-git clone https://github.com/simonhmartin/genomics_general
+mkdir data
+
+cd data
+
+wget https://github.com/simonhmartin/tutorials/raw/master/ABBA_BABA_whole_genome/data/hel92.DP8MP4BIMAC2HET75dist250.geno.gz
+
+wget https://github.com/simonhmartin/tutorials/raw/master/ABBA_BABA_whole_genome/data/hel92.pop.txt
+
+cd ..
+```
+
+* Next, download the collection of python scripts required for this tutorial [GitHub](https://github.com/simonhmartin)
+
+```bash
+wget https://github.com/simonhmartin/genomics_general/archive/master.zip
+unzip master.zip
 ```
 
 ### Genome wide allele frequencies
@@ -66,7 +81,7 @@ git clone https://github.com/simonhmartin/genomics_general
 To compute these values from population genomic data, we need to first determine the frequency of the derived allele in each populaton at each polymorphic site in the genome. We will compute these from the *Heliconius* genotype data provided using a python script. The input file has already been filtered to contain only bi-allelic sites. The frequencies script requires that we define populations. These are defined in the file `hel92.pop.txt`.
 
 ```bash
-python genomics_general/freq.py -g data/hel92.DP8MP4BIMAC2HET75dist250.geno.gz \
+python genomics_general-master/freq.py -g data/hel92.DP8MP4BIMAC2HET75dist250.geno.gz \
 -p mel_mel -p mel_ros -p mel_vul -p mel_mal -p mel_ama \
 -p cyd_chi -p cyd_zel -p tim_flo -p tim_txn -p num \
 --popsFile data/hel92.pop.txt --target derived \
@@ -78,11 +93,11 @@ By setting `--target derived` we obtain the frquency of the derived allele in ea
 
 **(NOTE: here we're working in R, or R Studio if you prefer)**
 
-To learn how the ABBA BABA test works, we will writing the code from scratch to do the test. **Start a new R script**. This will make it easy to re-run the whole analysis using different populations.
+To learn how the ABBA BABA test works, we will be writing the code from scratch to do the test. **Start a new R script**. This will make it easy to re-run the whole analysis using different populations.
 
 #### R functions for ABBA BABA analyses
 
-First we define a function for computing the ABBA and BABA proportions at each site and use these to compute the D atstistic. The input will be the frequency of the derived allele in populations P1, P2 and P3 (i.e. *p1*, *p1* and *p3*). (The frequency of the ancestral allele in the outgroup will be 1 at all sites because we used the outgroup to identify the ancestral allele, so this can be ignored).
+* First we define a function for computing the ABBA and BABA proportions at each site and use these to compute the D atstistic. The input will be the frequency of the derived allele in populations P1, P2 and P3 (i.e. *p1*, *p1* and *p3*). (The frequency of the ancestral allele in the outgroup will be 1 at all sites because we used the outgroup to identify the ancestral allele, so this can be ignored).
 
 ```R
 D.stat <- function(p1, p2, p3) {
@@ -94,10 +109,10 @@ D.stat <- function(p1, p2, p3) {
 
 #### The Data
 
-Read in our allele frequency data.
+* Read in our allele frequency data.
 
 ```R
-freq_table = read.table("data/hel92.DP8MP4BIMAC2HET75dist500.derFreq.tsv.gz", header=T, as.is=T)
+freq_table = read.table("data/hel92.DP8MP4BIMAC2HET75dist250.derFreq.tsv.gz", header=T, as.is=T)
 ```
 
 This has created an object called `freq_table` that contains the frequencies for the derived allele at each SNP.
@@ -126,7 +141,7 @@ P3 <- "cyd_chi"
 
 D <- D.stat(freq_table[,P1], freq_table[,P2], freq_table[,P3])
 
-D
+print(paste("D =", round(D,4)))
 ```
 
 We get a **strongly positive D statistic** (remember D varies from -1 to 1), indicating an excess of ABBA over BABA. This indicates that ***H. cydno chioneus* from Panama** (`cyd_chi`) **shares more genetic variation with the sympatric *H. melpomene rosina* from Panama** (`mel_ros`) than with the allopatirc *H. melpomene melpomene* from French Guiana (`mel_mel`). This is consistent with hybridisation and gene flow between the two species where they occur in sympatry.
@@ -146,7 +161,7 @@ To account for non-independence among linked sites, the block size needs to exce
 The code to run the jackknife procedure is fairly simple, but we are not going to write it here. Instead, the R functions for this porpose are provided in a separate script, which we can import now.
 
 ```R
-source("genomics_general/jackknife.R")
+source("genomics_general-master/jackknife.R")
 ```
 
 The first step in the process is to define the blocks that will be omitted from the genome in each iteration of the jackknife. The function `get_block_indices` in the jackknife script will do this, and return the 'indices' (i.e. the rows in our frequencies table) corresponding to each block. It requires that we specify the block size along with chromosome and position for each site to be analysed.
@@ -157,6 +172,8 @@ block_indices <- get_block_indices(block_size=1e6,
                                    chromosomes=freq_table$scaffold)
 
 n_blocks <- length(block_indices)
+
+print(paste("Genome divided into", n_blocks, "blocks."))
 ```
 
 Now we can run the block jackknifing procedure to compute the standad deviation of *D*. We provide the *D* statistic function (`D.stat`) we created earlier, which will be applied in each iteration. We also provide the frequencies for each site and the block indices that will be used to exclude all sites from a given block.
@@ -165,7 +182,8 @@ Now we can run the block jackknifing procedure to compute the standad deviation 
 D_sd <- get_jackknife_sd(block_indices=block_indices,
                          FUN=D.stat,
                          freq_table[,P1], freq_table[,P2], freq_table[,P3])
-D_sd
+
+print(paste("D standard deviation = ", round(D_sd,4)))
 ```
 
 From this unbiased estimate of the standard deviation of *D*, we can compute the standard error and the Z score to test of whether *D* deviates significantly from zero.
@@ -173,7 +191,8 @@ From this unbiased estimate of the standard deviation of *D*, we can compute the
 ```R
 D_err <- D_sd/sqrt(n_blocks)
 D_Z <- D / D_err
-D_Z
+
+print(paste("D Z score = ", round(D_Z,3)))
 ```
 
 Usually a Z score of 3 or 4 is taken as significant, so the massive Z score in this case means the devaition from zero is hugely significant.
@@ -208,7 +227,7 @@ P3b <- "cyd_zel"
 
 f <- f.stat(freq_table[,P1], freq_table[,P2], freq_table[,P3a], freq_table[,P3b])
 
-f
+print(paste("Admixture proportion = ", round(f,4)))
 ```
 
 This reveals that over 25% of the genome has been shared between *H. melpomene* and *H. cydno* in sympatry. The admixture proportion can be interpreted as the average proportion of foreign ancestry in any single genome. Alternatively, it can be interpreted as the expected frequency of foreign alleles in this population at any given site in the genome.
@@ -229,7 +248,7 @@ f_err <- f_sd/sqrt(n_blocks)
 f_CI_lower <- f - 1.96*f_err
 f_CI_upper <- f + 1.96*f_err
 
-print(paste("95% confidence interval of f:", round(f_CI_lower,4), round(f_CI_upper,4)))
+print(paste("95% confidence interval of f =", round(f_CI_lower,4), round(f_CI_upper,4)))
 
 ```
 
@@ -305,7 +324,7 @@ D_Z_by_chrom <- D_by_chrom / D_err_by_chrom
 D_Z_by_chrom
 ```
 
-We see that chromosomes 1-20 all show significant evidene for introgression (Z > 4), while chromosome 21, the Z sex chromoeosme, does not. In fact *D* is negative for chr21, indicating that the allopatric *H. melpomene population* shares more variation with *H. cydno* than the sympatric *H. melpomene* shares with *H. cydno*, although the difference is not significant. This indicates a strong reduction in introgression on the sex chromosome compared to the rest of the genome, consistent with strong selection against introgressed alleles on the sex chromosome. This is what we would expect if there are one or more incompatibilities that cause sterility that involve loci on the Z chromsoome.
+We see that chromosomes 1-20 all show significant evidene for introgression (Z > 4), while chromosome 21, the Z sex chromosome, does not. In fact *D* is negative for chr21, indicating that the allopatric *H. melpomene population* shares more variation with *H. cydno* than the sympatric *H. melpomene* shares with *H. cydno*, although the difference is not significant. This indicates a strong reduction in introgression on the sex chromosome compared to the rest of the genome, consistent with strong selection against introgressed alleles on the sex chromosome. This is what we would expect if there are one or more incompatibilities that cause sterility that involve loci on the Z chromsoome.
 
 
 ### In your own time
