@@ -70,10 +70,27 @@ However, we can also this feature of the test to our advantage. If we select a P
 
 * Open a terminal window and navigate to a folder where you will run the excersise and store all the input and output data files.
 
-* This tutorial makes use of a collection of python scripts that must be downloaded from [GitHub](https://github.com/simonhmartin)
+* Now create a subdirectory called 'data' and download the data files needed for tis tutorial
 
 ```bash
-git clone https://github.com/simonhmartin/genomics_general
+mkdir data
+
+cd data
+
+wget https://github.com/simonhmartin/tutorials/raw/master/ABBA_BABA_windows/data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz
+
+wget https://github.com/simonhmartin/tutorials/raw/master/ABBA_BABA_windows/data/hel92.pop.txt
+
+wget https://github.com/simonhmartin/tutorials/raw/master/ABBA_BABA_windows/data/chr18.LDhelmet_MLrho.w100.tsv
+
+cd ..
+```
+
+* Next, download the collection of python scripts required for this tutorial [GitHub](https://github.com/simonhmartin)
+
+```bash
+wget https://github.com/simonhmartin/genomics_general/archive/master.zip
+unzip master.zip
 ```
 
 ### Sliding window analysis
@@ -81,13 +98,13 @@ git clone https://github.com/simonhmartin/genomics_general
 * Run the the analysis python script for two separate cases. In both, P1 is the allpatric *H. melpomene melpomene* (`mel_mel`). P2 and P3 are the two populations we expect to be sharing genes. In the first case we are quantifying introgression between *H. melpomene rosina* (`mel_ros`) and *H. cydno chioneus* (`cyd_chi`) both from Panama. In the second we are quantifying introgression between *H. melpomene amaryllis* (`mel_ama`) and *H. timareta thelxinoe* (`tim_txn`) both from Peru.
 
 ```bash
-python genomics_general/ABBABABAwindows.py \
+python genomics_general-master/ABBABABAwindows.py \
 -g data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
 -o data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w25m250.csv.gz \
 -P1 mel_mel -P2 mel_ros -P3 cyd_chi -O num \
 --popsFile data/hel92.pop.txt -w 25000 -m 250 --T 2
 
-python genomics_general/ABBABABAwindows.py \
+python genomics_general-master/ABBABABAwindows.py \
 -g data/hel92.DP8HET75MP9BIminVar2.chr18.geno.gz -f phased \
 -o data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz \
 -P1 mel_mel -P2 mel_ama -P3 tim_txn -O num \
@@ -102,9 +119,7 @@ Finally, we tell the script to use two threads (`-T`). If you have a multi-core 
 
 #### Plotting window statistics
 
-* Open R
-
-* Set the working directory to the tutorial directory. You can do this with the `setwd()` command, or in RStudio using the menus.
+* Open R and, if necessary, set the working directory to the tutorial directory. You can do this with the `setwd()` command, or in RStudio using the menus.
 
 We need to load each file of window statistics into R. We will make a list containing both datasets. 
 
@@ -115,6 +130,8 @@ AB_files <- c("data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ros_chi_num.w2
                 "data/hel92.DP8HET75MP9BIminVar2.chr18.ABBABABA_mel_ama_txn_num.w25m250.csv.gz")
 
 AB_tables = lapply(AB_files, read.csv)
+
+head(AB_tables[[1]])
 ```
 
 *f<sub>d<sub>* is meaningless when D is negative, as it is designed to quantify the excess of ABBA over BABA only whgen an excess exists.
