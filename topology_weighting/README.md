@@ -27,8 +27,6 @@ Finally, we will compute weightings for the inferred trees and compare these wit
 
 ## Preparation
 
-* Download the scripts required for this tutorial from [github](https://github.com/simonhmartin)
-
 * Download the collections of python scripts required for this tutorial [GitHub](https://github.com/simonhmartin)
 
 ```bash
