@@ -29,15 +29,28 @@ Finally, we will compute weightings for the inferred trees and compare these wit
 
 * Download the scripts required for this tutorial from [github](https://github.com/simonhmartin)
 
+* Download the collections of python scripts required for this tutorial [GitHub](https://github.com/simonhmartin)
+
 ```bash
-git clone https://github.com/simonhmartin/genomics_general
-git clone https://github.com/simonhmartin/twisst
+wget https://github.com/simonhmartin/genomics_general/archive/master.zip
+unzip master.zip
+rm master.zip
+
+wget https://github.com/simonhmartin/twisst/archive/master.zip
+unzip master.zip
+rm master.zip
 ```
 
 * To ensure that the libraries are recognisable by python, add the @genomics_general' directory to the Python path
 
 ```bash
-export PYTHONPATH=$PYTHONPATH:genomics_general
+export PYTHONPATH=$PYTHONPATH:genomics_general-master
+```
+
+* Now make a subdirectory to store the simulation data
+
+```bash
+mkdir sim
 ```
 
 ## Practical Part 1. Analysis of simulated Genelogies
@@ -56,12 +69,12 @@ The above command will simulate the scenario described above. Note that to modif
 
 The final part of the command extracts only the tree objects from the output, as these are all we need.
 
-We can view the simulated trees using `less -S sim/msms_5of8_l500k_r5k_sweep.txt`  (type `q` at any time to exit). Each line represents the genealogy for a non-recombining 'block' of sequence, with the the genealogies separated by recombination events. Most blocks are only a few base pairs long (lengths given at the start of each line). You might have noiticed that adjacent genealogies are usually very similar, and sometimes identical. This is because they are usually separated by only a single recombination event, making them highly non-independent. We can check the number of blocks by counting the lines in the file: `wc -l msms_5of8_l500k_r5k_sweep.txt`.
+We can view the simulated trees using `less -S sim/msms_5of8_l500k_r5k_sweep.txt`  (type `q` at any time to exit). Each line represents the genealogy for a non-recombining 'block' of sequence, with the the genealogies separated by recombination events. Most blocks are only a few base pairs long (lengths given at the start of each line). You might have noiticed that adjacent genealogies are usually very similar, and sometimes identical. This is because they are usually separated by only a single recombination event, making them highly non-independent. We can check the number of blocks by counting the lines in the file: `wc -l sim/msms_5of8_l500k_r5k_sweep.txt`.
 
 * Next we extract the start and end positions of each genealogy, which will be used for plotting later. We also make a file of trees with the block sizes removed.
 
 ```bash
-python genomics_general/phylo/parse_ms_trees.py --msOutput sim/msms_5of8_l500k_r5k_sweep.txt \
+python genomics_general-master/phylo/parse_ms_trees.py --msOutput sim/msms_5of8_l500k_r5k_sweep.txt \
 --outTrees sim/msms_5of8_l500k_r5k_sweep.trees.gz --outData sim/msms_5of8_l500k_r5k_sweep.data.tsv.gz
 ```
 
@@ -71,28 +84,28 @@ The outputs of this command are both zipped with `gzip` to save space. You can v
 
 * We run [*Twisst*](https://github.com/simonhmartin/twisst) to compute the weightings for each topology. The core script is `twisst.py`, but we use the script `run_twisst_parallel.py` to run the script with multi-threading. Adjust the `--threads` argument according to the number of available cores.
 
-The only information *Twisst* requires is which group each sample belongs to. This may be determined by species, phenotype or geography. In our case we know the groupings because we simulated the data. Samples 1:8 will be group 'A', 8:16 group 'B' etc.  Instead of specifying the groups on the command line, we use a pre-made groups file (Note that if you change the number of samples per group, you will need a different groups file.
+The only information *Twisst* requires is which group each sample belongs to. This may be determined by species, phenotype or geography. In our case we know the groupings because we simulated the data. Samples 1:8 will be group 'A', 8:16 group 'B' etc.
 
 ```bash
-python twisst/run_twisst_parallel.py --threads 4 -t sim/msms_5of8_l500k_r5k_sweep.trees.gz \
---method complete -g A -g B -g C -g D -g E --groupsFile sim/sim.pop.txt |
+python twisst-master/run_twisst_parallel.py --threads 2 -t sim/msms_5of8_l500k_r5k_sweep.trees.gz --method complete \
+-g A 1,2,3,4,5,6,7,8 -g B 9,10,11,12,13,14,15,16 -g C 17,18,19,20,21,22,23,24 \
+-g D 25,26,27,28,29,30,31,32 -g E 33,34,35,36,37,38,39,40 |
 gzip > sim/msms_5of8_l500k_r5k_sweep.weights.tsv.gz
 ```
+There will be around 70,000 trees to analyse, so this will take some time to run. If you have a multi-core computer, you can increase the number of threads used to increase the speed.
 
-The command above tells twisst to use the `complete` method. This will compute the exact weightings by considering all possible sub-trees. The main output `sim/msms_5of8_l500k_r5k_sweep.weights.tsv.gz` has a line for each input tree with fifiteen columns, one for each of the possible topologies describing the relationship between the five groups. Each value gives the number of subtrees that match the given topology. Because complete weighting was used, the values in each line should sum to the total number of possible subtrees (8<sup>5</sup> = 32768).
+The command above tells twisst to use the `complete` method. This will compute the exact weightings by considering all possible sub-trees. The main output `sim/msms_5of8_l500k_r5k_sweep.weights.tsv.gz` has a line for each input tree with 15 columns, one for each of the possible topologies describing the relationship between the five groups. Each value gives the number of subtrees that match the given topology. Because complete weighting was used, the values in each line should sum to the total number of possible subtrees (8<sup>5</sup> = 32768).
 
 #### Plotting
 
-* Open R and set the working directory to the tutorial directory. In RStudio you can do this using the menus. In the terminal you can use th `setwd()` command.
+* Open R and, if necessary, set the working directory to the tutorial directory. In RStudio you can do this using the menus. In the terminal you can use th `setwd()` command.
 
 * Start a new R script to record all the plotting commands
 
 * First we will import the APE library and an additional set of functions from Twisst that will help with plotting.
 
 ```R
-library(ape)
-
-source("twisst/plot_twisst.R")
+source("twisst-master/plot_twisst.R")
 ```
 
 * We define the files containing the weights for each genealogy, and the start and end positions for each block along the chromosome.
@@ -131,7 +144,7 @@ twisst_data_smooth <- smooth.twisst(twisst_data, span=0.02)
 plot.twisst(twisst_data_smooth)
 ```
 
-Now we see more clearly that the predominant colour is that corresponding to Topology 3, which matches the population branching pattern in the simulation. The fact that other topologies are also pepresented indicates that lineage sorting does not always follow the population branching pattern. In particular, we expect to see some representation of Topology 12, in which B groups with C, and is nested within the C, D clade. This topology is expected to be more common than under null expectations due to the gene flow from population C to B. In particular, we see a major increase in Topology 12 around the selected locu, consistent with adaptive introgression.
+Now we see more clearly that the dominant colour is that corresponding to Topology 3, which matches the population branching pattern in the simulation. The fact that other topologies are also pepresented indicates that lineage sorting does not always follow the population branching pattern. In particular, we expect to see some representation of Topology 12, in which B groups with C, and is nested within the C, D clade. This topology is expected to be more common than under null expectations due to the gene flow from population C to B. In particular, we see a major increase in Topology 12 around the selected locu, consistent with adaptive introgression.
 
 Note that Topology 13 also groups B and C, but has a generally low weighting. Gene flow that occurs strictly from C to B will only tend to increase the abundanc of Topology 12, but not 13. Thus, topology weightings carry information about the direction of gene flow.
 
@@ -168,15 +181,15 @@ We will use a simple approach of dividing the sequence into narrow windows and i
 * First we need to convert the sequences into a more usable format, in which each row is a site and individual genotypes are given in columns. (NOTE: Conveniently, the simulation provides haploid sequences. Typical genomic data from diploid samples shoudl ideally be phased so that individual haplotypes can be distinguished for tree inference.)
 
 ```bash
-python genomics_general/seqToGeno.py --seqFile sim/msms_5of8_l500k_r5k_sweep.seqgen.phy.gz \
+python genomics_general-master/seqToGeno.py --seqFile sim/msms_5of8_l500k_r5k_sweep.seqgen.phy.gz \
 --format phylip --genoFile sim/msms_5of8_l500k_r5k_sweep.seqgen.geno.gz
 ```
 
 * This file contains both invariant and variant sites (SNPs). We only need the latter to make trees, so we will filter the file using another python script.
 
 ```bash
-python genomics_general/filterGenotypes.py -i sim/msms_5of8_l500k_r5k_sweep.seqgen.geno.gz --minAlleles 2 \
--o sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.geno.gz  --threads 4
+python genomics_general-master/filterGenotypes.py -i sim/msms_5of8_l500k_r5k_sweep.seqgen.geno.gz --minAlleles 2 \
+-o sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.geno.gz  --threads 2
 ```
 
 #### Infering trees for windows and computing weights
@@ -186,7 +199,7 @@ We now have a file of SNPs distributed across out 500 Kb genomic region. We want
 * The next script reads the SNP file in windows and then infers a tree for each window using [Phyml](http://www.atgc-montpellier.fr/phyml/). Phyml is capable of maximum likelihood inference, but here will will not use optimisation, so the trees output will be Neighbour-Joining trees, inferred using the [BIONJ](http://www.atgc-montpellier.fr/bionj/) algorithm.
 
 ```
-python genomics_general/phylo/phyml_sliding_windows.py -g sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.geno.gz \
+python genomics_general-master/phylo/phyml_sliding_windows.py -g sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.geno.gz \
 --windType sites -w 50 --prefix sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.w50.phyml_bionj --model HKY85 --optimise n --threads 1
 ```
 
@@ -195,15 +208,20 @@ This generates two output files: `sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.w50.p
 * Finally, we can compute the weightings for each of these inferred window trees.
 
 ```bash
-python ~/Research/weighting_trees/run_twisst_parallel.py -t sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.w50.phyml_bionj.trees.gz \
--g A -g B -g C -g D -g E --groupsFile sim/sim.pop.txt --method complete --threads 4 |
+python twisst-master/run_twisst_parallel.py --method complete --threads 2 -t sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.w50.phyml_bionj.trees.gz \
+-g A 1,2,3,4,5,6,7,8 -g B 9,10,11,12,13,14,15,16 -g C 17,18,19,20,21,22,23,24 \
+-g D 25,26,27,28,29,30,31,32 -g E 33,34,35,36,37,38,39,40 |
 gzip > sim/msms_5of8_l500k_r5k_sweep.seqgen.SNP.w50.phyml_bionj.weights.tsv.gz
 ```
 #### Plotting inferred weights
 
 As we did above, we can now plot the weights for these inferred trees across the chromosome. This can be done in the same R script as before.
 
-* Open R again (if you have restarted R, you may beed to reload the `APE` library and `plot_twisst.R` script).
+* **Open R again** (if you have restarted R, you may need to reload the `plot_twisst.R` script).
+
+```R
+source("twisst-master/plot_twisst.R")
+```
 
 * As before we read in the weights and window data files, and normalise the weights. Here we will load both the ***true*** weights and the ***inferred*** weights that we have just computed.
 
