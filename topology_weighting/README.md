@@ -562,7 +562,7 @@ weightsData = twisst.weightTrees(ts, treeFormat="ts", outgroup = "3", verbose=Fa
 twisst.summary(weightsData)
 ```
 
-* We can also quickly save the weights directly (which saves us the time of exporting to a file and plotting a fancy plot in R)
+* We can also quickly save a plot of the weights directly (which saves us the time of exporting to a file and plotting a fancy plot in R)
 
 ```python
 #extract mid positions on chromosome from tree sequence file
