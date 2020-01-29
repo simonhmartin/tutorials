@@ -438,7 +438,7 @@ So far, we have analysed tree files that have a distinct tree for each chromosom
 
 The Tree Sequence format is efficient because it records not only the connections between nodes on the tree, but the length of the chromosome for which each connection exists. This format is used by [`msprime`](https://msprime.readthedocs.io/en/stable/) and the [`tskit`](https://tskit.readthedocs.io/en/latest/index.html) package, which also provides more information.
 
-#### Simulating a tree sequence
+#### Simulating our first tree sequence
 
 We will use `msprime` to simulate a tree sequence. `msprime` is a coalescent simulator, which means it works by computing the probability that any two individuals share a common ancestor at a given time in the past. In a single population, this is determined by the population size. With multiple populations, this is also affected by the rates of migration between populations, and how long ago they descend from a single ancestral population.
 
@@ -487,6 +487,8 @@ for tree in ts.trees():
 Can you tell what is different between the trees? And what has stayed unchanged?
 
 * If you would like to explore further, the related tool [`tskit`](https://tskit.readthedocs.io/en/latest/index.html) has many inbuilt functions to analyse tree sequences.
+
+#### A larger simulation with four populations and gene flow
 
 * We will now set up a larger simulation with multiple populations. This requires a few different components, which we will define separately. First we define the number of samples and population size of each population.
 
@@ -545,6 +547,8 @@ ts.num_trees
 ```python
 print(ts.first().draw(format="unicode"))
 ```
+
+#### Computing weights from the Tree Sequence
 
 * And then run a function from `twisst` that computes weightings from a tree sequence. We don't need to specify the groups, as this information has been included in the tree sequence object by `msprime`. But we do still need to tell it to use the final population (number 3 because python counts from 0).
 
