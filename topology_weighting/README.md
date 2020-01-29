@@ -558,7 +558,7 @@ weightsData = twisst.weightTrees(ts, treeFormat="ts", outgroup = "3", verbose=Fa
 twisst.summary(weightsData)
 ```
 
-* We can also quickly view the weights (which saves us the time of exporting to a file and plotting in R)
+* We can also quickly save the weights directly (which saves us the time of exporting to a file and plotting a fancy plot in R)
 
 ```python
 #extract mid positions on chromosome from tree sequence file
@@ -573,8 +573,8 @@ for i in range(3):
 
 plt.legend()
 
-#show plot
-plt.show()
+#save plot
+plt.savefig('sim_ts_weights.pdf')
 ```
 
 **Excersise**: what happens to the weights when we:
