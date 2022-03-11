@@ -103,7 +103,7 @@ To learn how the ABBA BABA test works, we will be writing the code from scratch 
 D.stat <- function(p1, p2, p3) {
     ABBA <- (1 - p1) * p2 * p3
     BABA <- p1 * (1 - p2) * p3
-    (sum(ABBA) - sum(BABA)) / (sum(ABBA) + sum(BABA))
+    (sum(ABBA, na.rm=T) - sum(BABA, na.rm=T)) / (sum(ABBA, na.rm=T) + sum(BABA, na.rm=T))
     }
 ```
 
@@ -167,7 +167,7 @@ source("genomics_general-master/jackknife.R")
 The first step in the process is to define the blocks that will be omitted from the genome in each iteration of the jackknife. The function `get_block_indices` in the jackknife script will do this, and return the 'indices' (i.e. the rows in our frequencies table) corresponding to each block. It requires that we specify the block size along with chromosome and position for each site to be analysed.
 
 ```R
-block_indices <- get_block_indices(block_size=1e6,
+block_indices <- get.block.indices(block_size=1e6,
                                    positions=freq_table$position,
                                    chromosomes=freq_table$scaffold)
 
@@ -176,26 +176,25 @@ n_blocks <- length(block_indices)
 print(paste("Genome divided into", n_blocks, "blocks."))
 ```
 
-Now we can run the block jackknifing procedure to compute the standad deviation of *D*. We provide the *D* statistic function (`D.stat`) we created earlier, which will be applied in each iteration. We also provide the frequencies for each site and the block indices that will be used to exclude all sites from a given block.
+Now we can run the block jackknifing procedure to compute the mean and standad error of *D*. We provide the *D* statistic function (`D.stat`) we created earlier, which will be applied in each iteration. We also provide the frequencies for each site and the block indices that will be used to exclude all sites from a given block.
 
 ```R
-D_sd <- get_jackknife_sd(block_indices=block_indices,
-                         FUN=D.stat,
-                         freq_table[,P1], freq_table[,P2], freq_table[,P3])
+D_jackknife <- block.jackknife(block_indices=block_indices,
+                               FUN=D.stat,
+                               freq_table[,P1], freq_table[,P2], freq_table[,P3])
 
-print(paste("D standard deviation = ", round(D_sd,4)))
+print(paste("D jackknife mean =", round(D_jackknife$mean,4)))
 ```
 
-From this unbiased estimate of the standard deviation of *D*, we can compute the standard error and the Z score to test of whether *D* deviates significantly from zero.
+From the unbiased estimate of the mean and standard error of *D*, we can compute the Z score to test of whether *D* deviates significantly from zero.
 
 ```R
-D_err <- D_sd/sqrt(n_blocks)
-D_Z <- D / D_err
+D_Z <- D_jackknife$mean / D_jackknife$standard_error
 
 print(paste("D Z score = ", round(D_Z,3)))
 ```
 
-Usually a Z score of 3 or 4 is taken as significant, so the massive Z score in this case means the devaition from zero is hugely significant.
+Usually a Z score greater than 3 or 4 is taken as significant, so the massive Z score in this case means the devaition from zero is hugely significant.
 
 #### Estimating the admixture proportion
 
@@ -214,8 +213,8 @@ f.stat <- function(p1, p2, p3a, p3b) {
     ABBA_denominator <- (1 - p1) * p3b * p3a
     BABA_denominator <- p1 * (1 - p3b) * p3a
 
-    (sum(ABBA_numerator) - sum(BABA_numerator)) /
-    (sum(ABBA_denominator) - sum(BABA_denominator))
+    (sum(ABBA_numerator, na.rm=TRUE) - sum(BABA_numerator, na.rm=TRUE)) /
+    (sum(ABBA_denominator, na.rm=TRUE) - sum(BABA_denominator, na.rm=TRUE))
     }
 ```
 
@@ -235,18 +234,16 @@ This reveals that over 25% of the genome has been shared between *H. melpomene* 
 We can again use the block jackknife to estimate the standard deviation of f, and obtain a confidence interval. The jackknife block indices are already computed, so we can simply run the jackknife function again, this time pecifying the *f* function as that to run each iteration.
 
 ```R
-f_sd <- get_jackknife_sd(block_indices=block_indices,
-                         FUN=f.stat,
-                         freq_table[,P1], freq_table[,P2], freq_table[,P3a], freq_table[,P3b])
+f_jackknife <- block.jackknife(block_indices=block_indices,
+                               FUN=f.stat,
+                               freq_table[,P1], freq_table[,P2], freq_table[,P3a], freq_table[,P3b])
 
 ```
 The 95% confidence interval is the mean +/- ~1.96 standard errors.
 
 ```R
-f_err <- f_sd/sqrt(n_blocks)
-
-f_CI_lower <- f - 1.96*f_err
-f_CI_upper <- f + 1.96*f_err
+f_CI_lower <- f_jackknife$mean - 1.96*f_jackknife$standard_error
+f_CI_upper <- f_jackknife$mean + 1.96*f_jackknife$standard_error
 
 print(paste("95% confidence interval of f =", round(f_CI_lower,4), round(f_CI_upper,4)))
 
@@ -289,11 +286,10 @@ D_by_chrom <- sapply(chrom_names,
 We also need to apply the jackknife to to determine whether *D* differs significantly from zero for each chromosome. First we will define the blocks to use for each chromosome.
 	
 ```R
-block_indices_by_chrom <- lapply(chrom_names,
-                                 function(chrom) get_block_indices(block_size=1e6,
-                                                                   positions=freq_table$position[freq_table$scaffold==chrom]))
-
-names(block_indices_by_chrom) <- chrom_names
+block_indices_by_chrom <- sapply(chrom_names,
+                                 function(chrom) get.block.indices(block_size=1e6,
+                                                                   positions=freq_table$position[freq_table$scaffold==chrom]),
+                                                                   simplify=FALSE)
 ```
 
 This command returns a *list of lists*. This is a list with 21 elements - one for each chromosome. Each of these elements is a list giving the indices for each block within that chromosome.
@@ -310,18 +306,18 @@ Now we use the jackknife to compute the Z scores for *D* for each chromosome.
 
 
 ```R
-D_sd_by_chrom <- sapply(chrom_names,
-                        function(chrom) get_jackknife_sd(block_indices=block_indices_by_chrom[[chrom]],
-                                                         FUN=D.stat,
-                                                         freq_table[chrom_indices[[chrom]], P1],
-                                                         freq_table[chrom_indices[[chrom]], P2],
-                                                         freq_table[chrom_indices[[chrom]], P3]))
+D_jackknife_by_chrom <- sapply(chrom_names,
+                                 function(chrom) block.jackknife(block_indices=block_indices_by_chrom[[chrom]],
+                                                                 FUN=D.stat,
+                                                                 freq_table[chrom_indices[[chrom]], P1],
+                                                                 freq_table[chrom_indices[[chrom]], P2],
+                                                                 freq_table[chrom_indices[[chrom]], P3]))
 
-D_err_by_chrom <- D_sd_by_chrom / sqrt(sapply(block_indices_by_chrom, length))
+D_jackknife_by_chrom <- as.data.frame(t(D_jackknife_by_chrom))
 
-D_Z_by_chrom <- D_by_chrom / D_err_by_chrom
+D_jackknife_by_chrom$Z <- as.numeric(D_jackknife_by_chrom$mean) / as.numeric(D_jackknife_by_chrom$standard_error)
 
-D_Z_by_chrom
+D_jackknife_by_chrom
 ```
 
 We see that chromosomes 1-20 all show significant evidene for introgression (Z > 4), while chromosome 21, the Z sex chromosome, does not. In fact *D* is negative for chr21, indicating that the allopatric *H. melpomene population* shares more variation with *H. cydno* than the sympatric *H. melpomene* shares with *H. cydno*, although the difference is not significant. This indicates a strong reduction in introgression on the sex chromosome compared to the rest of the genome, consistent with strong selection against introgressed alleles on the sex chromosome. This is what we would expect if there are one or more incompatibilities that cause sterility that involve loci on the Z chromsoome.
